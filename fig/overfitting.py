@@ -56,12 +56,12 @@ def run_network(filename, num_epochs, training_set_size=1000, lmbda=0.0):
     net = network2.Network([784, 30, 10], cost=network2.CrossEntropyCost())
     net.large_weight_initializer()
     test_cost, test_accuracy, training_cost, training_accuracy \
-        = net.SGD(training_data[:training_set_size], num_epochs, 10, 0.5,
-                  evaluation_data=test_data, lmbda = lmbda,
-                  monitor_evaluation_cost=True, 
-                  monitor_evaluation_accuracy=True, 
-                  monitor_training_cost=True, 
-                  monitor_training_accuracy=True)
+        = net.stochastic_gradient_descent(training_data[:training_set_size], num_epochs, 10, 0.5,
+                                          evaluation_data=test_data, lmbda = lmbda,
+                                          monitor_evaluation_cost=True,
+                                          monitor_evaluation_accuracy=True,
+                                          monitor_training_cost=True,
+                                          monitor_training_accuracy=True)
     f = open(filename, "w")
     json.dump([test_cost, test_accuracy, training_cost, training_accuracy], f)
     f.close()

@@ -42,7 +42,7 @@ def SGD_final_layer(
     net = Network(self.sizes[-2:])
     net.biases[0] = self.biases[-1]
     net.weights[0] = self.weights[-1]
-    net.SGD(encoded_training_data, epochs, mini_batch_size, eta, lmbda)
+    net.stochastic_gradient_descent(encoded_training_data, epochs, mini_batch_size, eta, lmbda)
     self.biases[-1] = net.biases[0]
     self.weights[-1] = net.weights[0]
 
