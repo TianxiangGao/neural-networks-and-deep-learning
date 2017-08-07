@@ -101,7 +101,7 @@ def plot_training(epochs, filename, num_layers):
     plt.show()
 
 def get_average_gradient(net, training_data):
-    nabla_b_results = [net.backprop(x, y)[0] for x, y in training_data]
+    nabla_b_results = [net.backpropagation(x, y)[0] for x, y in training_data]
     gradient = list_sum(nabla_b_results)
     return [(np.reshape(g, len(g))/len(training_data)).tolist() 
             for g in gradient]

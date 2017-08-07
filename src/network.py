@@ -60,7 +60,7 @@ class Network(object):
                 training_data[k:k + mini_batch_size]
                 for k in range(0, n, mini_batch_size)]
             for mini_batch in mini_batches:
-                self.update_mini_batch(mini_batch, eta)
+                self.update_mini_batch_vectorization(mini_batch, eta)
             if test_data:
                 print("Epoch {0}: {1} / {2}".format(j, self.evaluate(test_data), n_test))
             else:
@@ -74,7 +74,7 @@ class Network(object):
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
         for x, y in mini_batch:
-            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
+            delta_nabla_b, delta_nabla_w = self.backpropagation(x, y)
             nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
         self.weights = [w - (eta / len(mini_batch)) * nw
@@ -82,7 +82,43 @@ class Network(object):
         self.biases = [b - (eta / len(mini_batch)) * nb
                        for b, nb in zip(self.biases, nabla_b)]
 
-    def backprop(self, x, y):
+    def update_mini_batch_vectorization(self, mini_batch, eta):
+        nabla_b, nabla_w = self.backpropagation_vectorization(mini_batch)
+
+        self.weights = [w - (eta / len(mini_batch)) * nw for w, nw in zip(self.weights, nabla_w)]
+        self.biases = [b - (eta / len(mini_batch)) * nb for b, nb in zip(self.biases, nabla_b)]
+
+    def backpropagation_vectorization(self, mini_batch):
+        features = np.column_stack([item[0] for item in mini_batch])
+        result = np.column_stack([item[1] for item in mini_batch])
+
+        nabla_b = [np.zeros(b.shape) for b in self.biases]
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
+
+        activation = features
+        activations = [activation]
+        zs = list()
+
+        for b, w in zip(self.biases, self.weights):
+            z = np.dot(w, activation) + b
+            zs.append(z)
+            activation = sigmoid(z)
+            activations.append(activation)
+
+        delta = self.cost_derivative(activations[-1], result) * sigmoid_prime(zs[-1])
+        nabla_b[-1] = np.sum(delta, axis=1, keepdims=True)
+        nabla_w[-1] = np.dot(delta, activations[-2].transpose())
+
+        for l in range(2, self.num_layers):
+            z = zs[-l]
+            sp = sigmoid_prime(z)
+            delta = np.dot(self.weights[-l + 1].transpose(), delta) * sp
+            nabla_b[-l] = np.sum(delta, axis=1, keepdims=True)
+            nabla_w[-l] = np.dot(delta, activations[-l - 1].transpose())
+
+        return nabla_b, nabla_w
+
+    def backpropagation(self, x, y):
         """Return a tuple ``(nabla_b, nabla_w)`` representing the
         gradient for the cost function C_x.  ``nabla_b`` and
         ``nabla_w`` are layer-by-layer lists of numpy arrays, similar
@@ -125,7 +161,8 @@ class Network(object):
                         for (x, y) in test_data]
         return sum(int(x == y) for (x, y) in test_results)
 
-    def cost_derivative(self, output_activations, y):
+    @staticmethod
+    def cost_derivative(output_activations, y):
         """Return the vector of partial derivatives \partial C_x /
         \partial a for the output activations."""
         return output_activations - y
